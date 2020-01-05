@@ -10,7 +10,7 @@ main :: IO ()
 main = print "give me functionality"
 
 execApp :: Exception e
-        => App r e a
+        => AppStack r e a
         -> r
         -> (a -> IO ())
         -> IO ()

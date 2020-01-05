@@ -7,7 +7,7 @@ import Data.UUID (UUID)
 data Action = AddPassage
             | RemovePassage
             | EditPassage
-
+            deriving (Eq, Ord, Show, Enum)
 edit :: Passage -> IO ()
 edit p = undefined
 
@@ -28,7 +28,7 @@ getTitles :: Story -> [Title]
 getTitles = fmap passageTitle . getPassages
 
 getPassages :: Story -> [Passage]
-getPassages = fmap snd . M.toList . passages
+getPassages = M.elems . passages
 
 editPassage :: Passage -> PassageBody -> Passage
 editPassage p pbody = p { passage = pbody }

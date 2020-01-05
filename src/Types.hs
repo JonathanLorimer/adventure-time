@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Types
-( App(..)
+( AppStack(..)
 , AppErrors(..)
 , MockPersistence
 , Title
@@ -34,7 +34,7 @@ type MockPersistence = IORef (Map Title Story)
 
 data AppErrors       = BasicError
 
-newtype App r e a = App { runApp :: ReaderT r (ExceptT e IO) a }
+newtype AppStack r e a = AppStack { runApp :: ReaderT r (ExceptT e IO) a }
   deriving ( Functor
            , Applicative
            , Monad
