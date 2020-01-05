@@ -9,6 +9,7 @@ module Types
 , Story(..)
 , Passage(..)
 , showStory
+, showTitle
 ) where
 
 import Data.Map (Map)
@@ -50,3 +51,6 @@ newtype AppStack r e a = AppStack { runApp :: ReaderT r (ExceptT e IO) a }
 
 showStory :: Story -> Text
 showStory = T.pack . show
+
+showTitle :: Title -> Text
+showTitle = T.pack . show

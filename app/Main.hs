@@ -14,8 +14,10 @@ import Data.UUID (UUID)
 
 main :: IO ()
 main = do
-  dStory <- defaultStory
-  initialState <- newIORef (M.fromList [("Demo Story", dStory)])
+  dStory  <- defaultStory
+  dStory2 <- defaultStory2
+  initialState <- newIORef $ M.fromList [ ("Demo Story", dStory)
+                                        , ("Demo Story 2", dStory2) ]
   execApp runUI initialState (\_ -> print "done")
   return ()
 
@@ -36,12 +38,19 @@ runUI = do
   initialState <- liftIO $ readIORef ref
   liftIO $ defaultMain ui (buildState initialState)
   where
-    buildState s = AppState PickStory s Nothing
+    buildState s = AppState PickStory s Nothing 0
 
 defaultStory :: IO Story
 defaultStory = do
   passageId <- nextRandom
   return Story { storyTitle = "Demo Story"
+               , start      = passageId
+               , passages   = M.fromList [(passageId, defaultPassage passageId)] }
+
+defaultStory2 :: IO Story
+defaultStory2 = do
+  passageId <- nextRandom
+  return Story { storyTitle = "Demo Story 2"
                , start      = passageId
                , passages   = M.fromList [(passageId, defaultPassage passageId)] }
 
