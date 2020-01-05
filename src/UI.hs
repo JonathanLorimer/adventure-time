@@ -34,13 +34,13 @@ drawUI :: AppState -> [Widget Resource]
 drawUI (AppState PickStory s _) =
   [ C.center $ drawBorder PickStory $ drawStories (M.elems s) ]
 drawUI (AppState PickMode _ _) =
-  [ C.center $ drawBorder PickMode drawPickMode]
+  [ C.center $ drawBorder PickMode [drawPickMode]]
 drawUI (AppState Play _ (Just s)) =
-  [ C.center $ drawBorder Play (drawPlay s)]
+  [ C.center $ drawBorder Play [drawPlay s]]
 drawUI (AppState (Edit Nothing) _ _) =
-  [ C.center $ drawBorder (Edit Nothing) drawPickAction]
+  [ C.center $ drawBorder (Edit Nothing) [drawPickAction]]
 drawUI (AppState (Edit (Just a)) _ (Just s)) =
-  [ C.center $ drawBorder (Edit Nothing) (drawEdit a s)]
+  [ C.center $ drawBorder (Edit Nothing) [drawEdit a s]]
 drawUI _ = error "something went wrong"
 
 customAttrMap :: AttrMap
@@ -52,12 +52,15 @@ handleEvent g (VtyEvent (V.EvKey V.KDown []))  = continue g
 handleEvent g (VtyEvent (V.EvKey V.KEnter [])) = continue g
 handleEvent g _                                = continue g
 
-drawBorder :: Mode -> Widget Resource -> Widget Resource
+drawBorder :: Mode -> [Widget Resource] -> Widget Resource
 drawBorder m w = withBorderStyle BS.unicodeBold
-  $ B.borderWithLabel (str $ "Adventure Time - Mode: " <> show m) w
+  $ B.borderWithLabel (str $ "Adventure Time - Mode: " <> show m)
+  $ C.center
+  $ vBox w
 
-drawStories :: [Story] -> Widget Resource
-drawStories ss = undefined
+drawStories :: [Story] -> [Widget Resource]
+drawStories [] = [withAttr "blue-fg" . txtWrap . ("➤ " <>) $ "create story"]
+drawStories ss = (withAttr "blue-fg" . txtWrap . ("➤ " <>)) . showStory <$> ss
 
 drawPickMode :: Widget Resource
 drawPickMode = undefined
