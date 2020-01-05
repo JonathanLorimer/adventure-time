@@ -38,7 +38,7 @@ library:
   source-dirs: src
 
 executables:
-  adventure-exe:
+  adventure-time:
     main:                Main.hs
     source-dirs:         app
     ghc-options:

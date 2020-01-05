@@ -44,7 +44,7 @@ drawUI (AppState (Edit (Just a)) _ (Just s)) =
 drawUI _ = error "something went wrong"
 
 customAttrMap :: AttrMap
-customAttrMap = undefined
+customAttrMap = attrMap V.defAttr []
 
 handleEvent :: AppState -> BrickEvent Resource e -> EventM Resource (Next AppState)
 handleEvent g (VtyEvent (V.EvKey V.KUp []))    = continue g
