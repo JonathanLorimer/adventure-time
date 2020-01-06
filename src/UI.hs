@@ -54,9 +54,15 @@ handleEvent s (VtyEvent (V.EvKey V.KUp []))    =
     then continue s
     else continue $ s { cursor = cursor s - 1 }
 handleEvent s (VtyEvent (V.EvKey V.KDown []))  =
-  if cursor s == (M.size (stories s) - 1)
-    then continue s
-    else continue $ s { cursor = cursor s + 1 }
+  case mode s of
+   PickStory -> safeMove (M.size (stories s) - 1)
+   PickMode -> safeMove 1
+   Play     -> safeMove $ ((+ (-1)) . length . choices) (fromJust $ curPassage s)
+  where
+    safeMove i = if cursor s == i
+                  then continue s
+                  else continue $ s { cursor = cursor s + 1 }
+
 handleEvent s (VtyEvent (V.EvKey V.KEnter [])) = continue $ transitionState s
 handleEvent s (VtyEvent (V.EvKey V.KEsc []))   = halt s
 handleEvent s _                                = continue s
@@ -67,10 +73,18 @@ transitionState s =
     PickStory -> s { mode = PickMode
                    , story = Just $ M.elems (stories s) !! cursor s
                    , cursor = 0 }
-    PickMode  -> s { mode = if cursor s == 0 then Edit Nothing else Play }
+    PickMode  -> s { mode = if cursor s == 0 then Edit Nothing else Play
+                   , curPassage = story s >>= \st -> M.lookup (start st) (passages st) }
+    Play      -> case choices $ fromJust (curPassage s) of
+                     [] -> s { mode = PickStory
+                                  , story = Nothing
+                                  , curPassage = Nothing
+                                  , cursor = 0 }
+                     xs -> s { curPassage = M.lookup
+                                              (xs !! cursor s)
+                                              (fromJust $ passages <$> story s) }
     _ -> s
 {-
-    Play      ->
     Edit _    ->
 -}
 
@@ -78,13 +92,7 @@ uiBase :: Mode -> [Widget Resource] -> [Widget Resource]
 uiBase m w = [ genericBorder
   (T.pack ("Adventure Time - Mode: " <> show m))
   $ vBox w]
-    {-
-  [ C.center
-  $ withBorderStyle BS.unicodeBold
-  $ B.borderWithLabel (str $ "Adventure Time - Mode: " <> show m)
-  $ C.center
-  $ vBox w ]
--}
+
 genericBorder :: Text -> Widget Resource -> Widget Resource
 genericBorder label widget = C.center
   $ withBorderStyle BS.unicodeBold
@@ -94,7 +102,7 @@ genericBorder label widget = C.center
 
 drawStories :: CursorPos -> [Story] -> [Widget Resource]
 drawStories _ [] = [txtWrap . ("➤ " <>) $ "create story"]
-drawStories p ss = txtWrap <$> prefixCursor (showTitle . storyTitle <$> ss) p
+drawStories p ss = txtWrap <$> prefixCursor p (showTitle . storyTitle <$> ss)
 
 drawPickMode :: CursorPos -> [Widget Resource]
 drawPickMode 0 = [txtWrap "➤ Edit Mode", txtWrap "  Play Mode"]
@@ -118,11 +126,11 @@ drawPlay (AppState m ss (Just s) p c) =
 
 drawChoices :: CursorPos -> [Passage] -> [Widget Resource]
 drawChoices _ [] = [txtWrap "Fin"]
-drawChoices p ps = txtWrap <$> prefixCursor (showTitle . passageTitle <$> ps) p
+drawChoices p ps = txtWrap <$> prefixCursor p (showTitle . passageTitle <$> ps)
 
 
-prefixCursor :: [Text] -> CursorPos -> [Text]
-prefixCursor l p = fst $ foldr
+prefixCursor :: CursorPos -> [Text] -> [Text]
+prefixCursor p l = fst $ foldr
       (\e (xs, i) -> if i == p
                       then ("➤ " <> e : xs, i - 1)
                       else ("  " <> e : xs, i - 1))

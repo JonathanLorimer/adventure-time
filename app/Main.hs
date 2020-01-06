@@ -4,13 +4,14 @@ import Types
 import UI (ui, AppState(..), Mode(..))
 
 import Data.IORef
+import qualified Data.Text as T
+import Data.UUID (UUID)
+import Data.UUID.V4 (nextRandom)
 import qualified Data.Map as M
 import Control.Monad.Reader
 import Control.Monad.Except
 import Control.Exception
 import Brick.Main (defaultMain)
-import Data.UUID.V4 (nextRandom)
-import Data.UUID (UUID)
 
 main :: IO ()
 main = do
@@ -50,13 +51,27 @@ defaultStory = do
 defaultStory2 :: IO Story
 defaultStory2 = do
   passageId <- nextRandom
+  passageId2 <- nextRandom
+  passageId3 <- nextRandom
+  passageId4 <- nextRandom
+
+  let p1 = (defaultPassage passageId ) { choices = [ passageId2
+                                                   , passageId3
+                                                   , passageId4 ] }
+  let p2 = (defaultPassage passageId2) { choices = [passageId3] }
+  let p3 = (defaultPassage passageId3) { choices = [passageId, passageId4] }
+  let p4 = (defaultPassage passageId4) { choices = [] }
+
   return Story { storyTitle = "Demo Story 2"
                , start      = passageId
-               , passages   = M.fromList [(passageId, defaultPassage passageId)] }
+               , passages   = M.fromList [(passageId , p1)
+                                         ,(passageId2, p2)
+                                         ,(passageId3, p3)
+                                         ,(passageId4, p4)]}
 
 defaultPassage :: UUID -> Passage
 defaultPassage passageId = Passage { uuid           = passageId
-                                   , passageTitle   = "Passage Title"
+                                   , passageTitle   = T.pack $ "Passage: " <> show passageId
                                    , passage        = defaultPassageBody
                                    , choices        = [] }
 
