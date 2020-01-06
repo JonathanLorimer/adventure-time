@@ -34,39 +34,48 @@ ui = App { appDraw         = drawUI
          }
 
 drawUI :: AppState -> [Widget Resource]
-drawUI (AppState PickStory s _ c) =
-  [ C.center $ drawBorder PickStory $ drawStories c (M.elems s) ]
-drawUI (AppState PickMode _ _ c) =
-  [ C.center $ drawBorder PickMode [drawPickMode]]
-drawUI (AppState Play _ (Just s) c) =
-  [ C.center $ drawBorder Play [drawPlay s]]
-drawUI (AppState (Edit Nothing) _ _ c) =
-  [ C.center $ drawBorder (Edit Nothing) [drawPickAction]]
-drawUI (AppState (Edit (Just a)) _ (Just s) c) =
-  [ C.center $ drawBorder (Edit Nothing) [drawEdit a s]]
+drawUI (AppState PickStory       s _ c) = drawBorder PickStory $ drawStories c (M.elems s)
+drawUI (AppState PickMode        _ _ c) = drawBorder PickMode $ drawPickMode c
+drawUI (AppState Play            _ (Just s) c) = drawBorder Play [drawPlay s]
+drawUI (AppState (Edit Nothing)  _ _ c) = drawBorder (Edit Nothing) [drawPickAction]
+drawUI (AppState (Edit (Just a)) _ (Just s) c) = drawBorder (Edit Nothing) [drawEdit a s]
 drawUI _ = error "something went wrong"
 
 customAttrMap :: AttrMap
 customAttrMap = attrMap V.defAttr []
 
 handleEvent :: AppState -> BrickEvent Resource e -> EventM Resource (Next AppState)
-handleEvent g (VtyEvent (V.EvKey V.KUp []))    =
-  if cursor g == 0
-    then continue g
-    else continue $ g { cursor = cursor g - 1 }
-handleEvent g (VtyEvent (V.EvKey V.KDown []))  =
-  if cursor g == (M.size (stories g) - 1)
-    then continue g
-    else continue $ g { cursor = cursor g + 1 }
-handleEvent g (VtyEvent (V.EvKey V.KEnter [])) = continue g
-handleEvent g (VtyEvent (V.EvKey V.KEsc []))   = halt g
-handleEvent g _                                = continue g
+handleEvent s (VtyEvent (V.EvKey V.KUp []))    =
+  if cursor s == 0
+    then continue s
+    else continue $ s { cursor = cursor s - 1 }
+handleEvent s (VtyEvent (V.EvKey V.KDown []))  =
+  if cursor s == (M.size (stories s) - 1)
+    then continue s
+    else continue $ s { cursor = cursor s + 1 }
+handleEvent s (VtyEvent (V.EvKey V.KEnter [])) = continue $ transitionState s
+handleEvent s (VtyEvent (V.EvKey V.KEsc []))   = halt s
+handleEvent s _                                = continue s
 
-drawBorder :: Mode -> [Widget Resource] -> Widget Resource
-drawBorder m w = withBorderStyle BS.unicodeBold
+transitionState :: AppState -> AppState
+transitionState s =
+  case mode s of
+    PickStory -> s { mode = PickMode
+                   , story = Just $ M.elems (stories s) !! cursor s
+                   , cursor = 0 }
+    _ -> s
+{-
+    PickMode  ->
+    Play      ->
+    Edit _    ->
+-}
+
+drawBorder :: Mode -> [Widget Resource] -> [Widget Resource]
+drawBorder m w = [ C.center
+  $ withBorderStyle BS.unicodeBold
   $ B.borderWithLabel (str $ "Adventure Time - Mode: " <> show m)
   $ C.center
-  $ vBox w
+  $ vBox w ]
 
 drawStories :: CursorPos -> [Story] -> [Widget Resource]
 drawStories _ [] = [txtWrap . ("➤ " <>) $ "create story"]
@@ -78,8 +87,10 @@ drawStories p ss = txtWrap <$> (fst . prefix $ showTitle . storyTitle <$> ss)
                       else ("  " <> e : xs, i - 1))
       ([], L.length l - 1) l
 
-drawPickMode :: Widget Resource
-drawPickMode = undefined
+drawPickMode :: CursorPos -> [Widget Resource]
+drawPickMode 0 = [txtWrap "➤ Edit Mode", txtWrap "  Play Mode"]
+drawPickMode 1 = [txtWrap "  Edit Mode", txtWrap "➤ Play Mode"]
+
 
 drawPickAction :: Widget Resource
 drawPickAction = undefined
