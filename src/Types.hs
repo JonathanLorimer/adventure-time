@@ -1,15 +1,14 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Types
-( AppStack(..)
-, AppErrors(..)
-, MockPersistence
+( AppStack(..) , AppErrors(..) , MockPersistence
 , Title
 , PassageBody
 , Story(..)
 , Passage(..)
 , showStory
 , showTitle
+, showPassageBody
 ) where
 
 import Data.Map (Map)
@@ -54,3 +53,7 @@ showStory = T.pack . show
 
 showTitle :: Title -> Text
 showTitle = T.pack . show
+
+showPassageBody :: PassageBody -> Text
+showPassageBody = T.pack . show
+

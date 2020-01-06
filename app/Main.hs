@@ -38,7 +38,7 @@ runUI = do
   initialState <- liftIO $ readIORef ref
   liftIO $ defaultMain ui (buildState initialState)
   where
-    buildState s = AppState PickStory s Nothing 0
+    buildState s = AppState PickStory s Nothing Nothing 0
 
 defaultStory :: IO Story
 defaultStory = do

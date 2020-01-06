@@ -8,6 +8,9 @@ import Edit (Action(..))
 import Data.Map (Map)
 import qualified Data.List as L
 import qualified Data.Map as M
+import Data.Maybe
+import Data.Text (Text)
+import qualified Data.Text as T
 import Types
 import qualified Graphics.Vty as V
 
@@ -17,10 +20,11 @@ data Mode = PickStory
           | Edit (Maybe Action)
           deriving (Eq, Ord, Show)
 
-data AppState = AppState { mode    :: Mode
-                         , stories :: Map Title Story
-                         , story   :: Maybe Story
-                         , cursor  :: CursorPos }
+data AppState = AppState { mode       :: Mode
+                         , stories    :: Map Title Story
+                         , story      :: Maybe Story
+                         , curPassage :: Maybe Passage
+                         , cursor     :: CursorPos }
 
 type Resource = ()
 type CursorPos = Int
@@ -34,11 +38,11 @@ ui = App { appDraw         = drawUI
          }
 
 drawUI :: AppState -> [Widget Resource]
-drawUI (AppState PickStory       s _ c) = drawBorder PickStory $ drawStories c (M.elems s)
-drawUI (AppState PickMode        _ _ c) = drawBorder PickMode $ drawPickMode c
-drawUI (AppState Play            _ (Just s) c) = drawBorder Play [drawPlay s]
-drawUI (AppState (Edit Nothing)  _ _ c) = drawBorder (Edit Nothing) [drawPickAction]
-drawUI (AppState (Edit (Just a)) _ (Just s) c) = drawBorder (Edit Nothing) [drawEdit a s]
+drawUI (AppState PickStory       s _ _ c) = uiBase PickStory $ drawStories c (M.elems s)
+drawUI (AppState PickMode        _ _ _ c) = uiBase PickMode $ drawPickMode c
+drawUI a@(AppState Play          _ _ _ _) = uiBase Play [drawPlay a]
+drawUI (AppState (Edit Nothing)  _ _ _ c) = uiBase (Edit Nothing) [drawPickAction]
+drawUI (AppState (Edit (Just a)) _ (Just s) _ c) = uiBase (Edit Nothing) [drawEdit a s]
 drawUI _ = error "something went wrong"
 
 customAttrMap :: AttrMap
@@ -63,33 +67,39 @@ transitionState s =
     PickStory -> s { mode = PickMode
                    , story = Just $ M.elems (stories s) !! cursor s
                    , cursor = 0 }
+    PickMode  -> s { mode = if cursor s == 0 then Edit Nothing else Play }
     _ -> s
 {-
-    PickMode  ->
     Play      ->
     Edit _    ->
 -}
 
-drawBorder :: Mode -> [Widget Resource] -> [Widget Resource]
-drawBorder m w = [ C.center
+uiBase :: Mode -> [Widget Resource] -> [Widget Resource]
+uiBase m w = [ genericBorder
+  (T.pack ("Adventure Time - Mode: " <> show m))
+  $ vBox w]
+    {-
+  [ C.center
   $ withBorderStyle BS.unicodeBold
   $ B.borderWithLabel (str $ "Adventure Time - Mode: " <> show m)
   $ C.center
   $ vBox w ]
+-}
+genericBorder :: Text -> Widget Resource -> Widget Resource
+genericBorder label widget = C.center
+  $ withBorderStyle BS.unicodeBold
+  $ B.borderWithLabel (txt label)
+  $ C.center widget
+
 
 drawStories :: CursorPos -> [Story] -> [Widget Resource]
 drawStories _ [] = [txtWrap . ("➤ " <>) $ "create story"]
-drawStories p ss = txtWrap <$> (fst . prefix $ showTitle . storyTitle <$> ss)
-  where
-    prefix l = foldr
-      (\e (xs, i) -> if i == p
-                      then ("➤ " <> e : xs, i - 1)
-                      else ("  " <> e : xs, i - 1))
-      ([], L.length l - 1) l
+drawStories p ss = txtWrap <$> prefixCursor (showTitle . storyTitle <$> ss) p
 
 drawPickMode :: CursorPos -> [Widget Resource]
 drawPickMode 0 = [txtWrap "➤ Edit Mode", txtWrap "  Play Mode"]
 drawPickMode 1 = [txtWrap "  Edit Mode", txtWrap "➤ Play Mode"]
+drawPickMode _ = error "should not be able to get here"
 
 
 drawPickAction :: Widget Resource
@@ -98,5 +108,22 @@ drawPickAction = undefined
 drawEdit :: Action -> Story -> Widget Resource
 drawEdit a = undefined
 
-drawPlay :: Story -> Widget Resource
-drawPlay s = undefined
+drawPlay :: AppState -> Widget Resource
+drawPlay (AppState _ _ Nothing _ _) = error "should not be able to get here"
+drawPlay (AppState m ss (Just s) p c) =
+  let psg = fromMaybe (fromJust $ M.lookup (start s) (passages s)) p
+      cw  = drawChoices c (catMaybes $ flip M.lookup (passages s) <$> choices psg)
+  in  genericBorder "choose a path" (vBox cw)
+  <+> genericBorder "passage" (padAll 1 $ txtWrap (passage psg))
+
+drawChoices :: CursorPos -> [Passage] -> [Widget Resource]
+drawChoices _ [] = [txtWrap "Fin"]
+drawChoices p ps = txtWrap <$> prefixCursor (showTitle . passageTitle <$> ps) p
+
+
+prefixCursor :: [Text] -> CursorPos -> [Text]
+prefixCursor l p = fst $ foldr
+      (\e (xs, i) -> if i == p
+                      then ("➤ " <> e : xs, i - 1)
+                      else ("  " <> e : xs, i - 1))
+      ([], L.length l - 1) l
