@@ -38,11 +38,11 @@ ui = App { appDraw         = drawUI
          }
 
 drawUI :: AppState -> [Widget Resource]
-drawUI (AppState PickStory       s _ _ c) = uiBase PickStory $ drawStories c (M.elems s)
-drawUI (AppState PickMode        _ _ _ c) = uiBase PickMode $ drawPickMode c
-drawUI a@(AppState Play          _ _ _ _) = uiBase Play [drawPlay a]
-drawUI (AppState (Edit Nothing)  _ _ _ c) = uiBase (Edit Nothing) [drawPickAction]
-drawUI (AppState (Edit (Just a)) _ (Just s) _ c) = uiBase (Edit Nothing) [drawEdit a s]
+drawUI AppState { mode = PickStory, stories, cursor} = uiBase PickStory $ drawStories cursor (M.elems stories)
+drawUI AppState {mode = PickMode, cursor} = uiBase PickMode $ drawPickMode cursor
+drawUI a@AppState {mode = Play} = uiBase Play [drawPlay a]
+drawUI AppState {mode = (Edit Nothing)} = uiBase (Edit Nothing) [drawPickAction]
+drawUI AppState {mode = (Edit (Just a)), story = (Just s)} = uiBase (Edit Nothing) [drawEdit a s]
 drawUI _ = error "something went wrong"
 
 customAttrMap :: AttrMap
@@ -58,6 +58,7 @@ handleEvent s (VtyEvent (V.EvKey V.KDown []))  =
    PickStory -> safeMove (M.size (stories s) - 1)
    PickMode -> safeMove 1
    Play     -> safeMove $ ((+ (-1)) . length . choices) (fromJust $ curPassage s)
+   _ -> continue s
   where
     safeMove i = if cursor s == i
                   then continue s
@@ -114,13 +115,13 @@ drawPickAction :: Widget Resource
 drawPickAction = undefined
 
 drawEdit :: Action -> Story -> Widget Resource
-drawEdit a = undefined
+drawEdit = undefined
 
 drawPlay :: AppState -> Widget Resource
-drawPlay (AppState _ _ Nothing _ _) = error "should not be able to get here"
-drawPlay (AppState m ss (Just s) p c) =
-  let psg = fromMaybe (fromJust $ M.lookup (start s) (passages s)) p
-      cw  = drawChoices c (catMaybes $ flip M.lookup (passages s) <$> choices psg)
+drawPlay AppState {story = Nothing} = error "should not be able to get here"
+drawPlay AppState { story = (Just s), curPassage, cursor} =
+  let psg = fromMaybe (fromJust $ M.lookup (start s) (passages s)) curPassage
+      cw  = drawChoices cursor (catMaybes $ flip M.lookup (passages s) <$> choices psg)
   in  genericBorder "choose a path" (vBox cw)
   <+> genericBorder "passage" (padAll 1 $ txtWrap (passage psg))
 

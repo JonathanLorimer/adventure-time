@@ -9,20 +9,15 @@ data Action = AddPassage
             | EditPassage
             deriving (Eq, Ord, Show, Enum)
 edit :: Passage -> IO ()
-edit p = undefined
+edit = undefined
 
 addPassage :: Story
-           -> UUID
-           -> Title
-           -> PassageBody
-           -> [UUID]
+           -> Passage
            -> Story
-addPassage story pid title pb ids =
+addPassage story passage =
   Story (storyTitle story)
         (start story)
-        (M.insert pid newPassage (passages story))
-    where
-      newPassage = Passage pid title pb ids
+        (M.insert (uuid passage) passage (passages story))
 
 getTitles :: Story -> [Title]
 getTitles = fmap passageTitle . getPassages

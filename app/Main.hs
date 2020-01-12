@@ -19,7 +19,7 @@ main = do
   dStory2 <- defaultStory2
   initialState <- newIORef $ M.fromList [ ("Demo Story", dStory)
                                         , ("Demo Story 2", dStory2) ]
-  execApp runUI initialState (\_ -> print "done")
+  execApp runUI initialState (\_ -> print ("done" :: String))
   return ()
 
 execApp :: Exception e

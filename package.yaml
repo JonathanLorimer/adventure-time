@@ -33,6 +33,7 @@ ghc-options: -Wall
 default-extensions:
   - RankNTypes
   - OverloadedStrings
+  - NamedFieldPuns
 
 library:
   source-dirs: src
