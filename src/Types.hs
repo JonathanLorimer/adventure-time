@@ -10,6 +10,11 @@ module Types
 , showTitle
 , showPassageBody
 , ID(..)
+, AppState(..)
+, Resource
+, CursorPos
+, Mode(..)
+, Action
 ) where
 
 import Data.Map (Map)
@@ -50,6 +55,27 @@ newtype AppStack r e a = AppStack { runApp :: ReaderT r (ExceptT e IO) a }
            , MonadError e
            , MonadReader r
            , MonadIO )
+
+data Mode = PickStory
+          | PickMode
+          | Play
+          | Edit (Maybe Action)
+          deriving (Eq, Ord, Show)
+
+data AppState = AppState { mode       :: Mode
+                         , stories    :: Map Title Story
+                         , story      :: Maybe Story
+                         , curPassage :: Maybe Passage
+                         , cursor     :: CursorPos }
+
+type Resource = ()
+type CursorPos = Int
+
+
+data Action = AddPassage
+            | RemovePassage
+            | EditPassage
+            deriving (Eq, Ord, Show, Enum)
 
 showStory :: Story -> Text
 showStory = T.pack . show

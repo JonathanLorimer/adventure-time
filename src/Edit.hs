@@ -1,14 +1,19 @@
 module Edit where
 
+-- External Imports
+import Brick
+
+-- Internal Imports
 import Types
 import qualified Data.Map as M
 
-data Action = AddPassage
-            | RemovePassage
-            | EditPassage
-            deriving (Eq, Ord, Show, Enum)
-edit :: Passage -> IO ()
-edit = undefined
+
+
+drawPickAction :: Widget Resource
+drawPickAction = undefined
+
+drawEdit :: Action -> Story -> Widget Resource
+drawEdit = undefined
 
 addPassage :: Story
            -> Passage

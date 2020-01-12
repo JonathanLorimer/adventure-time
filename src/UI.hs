@@ -1,33 +1,17 @@
 module UI where
 
+-- External Imports
 import Brick
-import qualified Brick.Widgets.Center as C
-import qualified Brick.Widgets.Border as B
-import qualified Brick.Widgets.Border.Style as BS
-import Edit (Action(..))
-import Data.Map (Map)
-import qualified Data.List as L
 import qualified Data.Map as M
 import Data.Maybe
-import Data.Text (Text)
-import qualified Data.Text as T
-import Types
 import qualified Graphics.Vty as V
 
-data Mode = PickStory
-          | PickMode
-          | Play
-          | Edit (Maybe Action)
-          deriving (Eq, Ord, Show)
-
-data AppState = AppState { mode       :: Mode
-                         , stories    :: Map Title Story
-                         , story      :: Maybe Story
-                         , curPassage :: Maybe Passage
-                         , cursor     :: CursorPos }
-
-type Resource = ()
-type CursorPos = Int
+-- Internal Imports
+import Types
+import Menu
+import Play (drawPlay)
+import Edit
+import UIHelpers
 
 ui :: App AppState e Resource
 ui = App { appDraw         = drawUI
@@ -75,7 +59,8 @@ transitionState s =
                    , story = Just $ M.elems (stories s) !! cursor s
                    , cursor = 0 }
     PickMode  -> s { mode = if cursor s == 0 then Edit Nothing else Play
-                   , curPassage = story s >>= \st -> M.lookup (start st) (passages st) }
+                   , curPassage = story s >>=
+                      \st -> M.lookup (start st) (passages st) }
     Play      -> case choices $ fromJust (curPassage s) of
                      [] -> s { mode = PickStory
                                   , story = Nothing
@@ -89,50 +74,3 @@ transitionState s =
     Edit _    ->
 -}
 
-uiBase :: Mode -> [Widget Resource] -> [Widget Resource]
-uiBase m w = [ genericBorder
-  (T.pack ("Adventure Time - Mode: " <> show m))
-  $ vBox w]
-
-genericBorder :: Text -> Widget Resource -> Widget Resource
-genericBorder label widget = C.center
-  $ withBorderStyle BS.unicodeBold
-  $ B.borderWithLabel (txt label)
-  $ C.center widget
-
-
-drawStories :: CursorPos -> [Story] -> [Widget Resource]
-drawStories _ [] = [txtWrap . ("➤ " <>) $ "create story"]
-drawStories p ss = txtWrap <$> prefixCursor p (showTitle . storyTitle <$> ss)
-
-drawPickMode :: CursorPos -> [Widget Resource]
-drawPickMode 0 = [txtWrap "➤ Edit Mode", txtWrap "  Play Mode"]
-drawPickMode 1 = [txtWrap "  Edit Mode", txtWrap "➤ Play Mode"]
-drawPickMode _ = error "should not be able to get here"
-
-
-drawPickAction :: Widget Resource
-drawPickAction = undefined
-
-drawEdit :: Action -> Story -> Widget Resource
-drawEdit = undefined
-
-drawPlay :: AppState -> Widget Resource
-drawPlay AppState {story = Nothing} = error "should not be able to get here"
-drawPlay AppState { story = (Just s), curPassage, cursor} =
-  let psg = fromMaybe (fromJust $ M.lookup (start s) (passages s)) curPassage
-      cw  = drawChoices cursor (catMaybes $ flip M.lookup (passages s) <$> choices psg)
-  in  genericBorder "choose a path" (vBox cw)
-  <+> genericBorder "passage" (padAll 1 $ txtWrap (passage psg))
-
-drawChoices :: CursorPos -> [Passage] -> [Widget Resource]
-drawChoices _ [] = [txtWrap "Fin"]
-drawChoices p ps = txtWrap <$> prefixCursor p (showTitle . passageTitle <$> ps)
-
-
-prefixCursor :: CursorPos -> [Text] -> [Text]
-prefixCursor p l = fst $ foldr
-      (\e (xs, i) -> if i == p
-                      then ("➤ " <> e : xs, i - 1)
-                      else ("  " <> e : xs, i - 1))
-      ([], L.length l - 1) l

@@ -1,7 +1,7 @@
 module Main where
 
 import Types
-import UI (ui, AppState(..), Mode(..))
+import UI (ui)
 
 import Data.IORef
 import qualified Data.Text as T
