@@ -9,6 +9,7 @@ module Types
 , showStory
 , showTitle
 , showPassageBody
+, ID(..)
 ) where
 
 import Data.Map (Map)
@@ -20,15 +21,17 @@ import Control.Monad.Reader
 import Control.Monad.Except
 import Control.Exception
 
-data Passage = Passage { uuid           :: UUID
+newtype ID a = ID UUID deriving (Eq, Ord, Show)
+
+data Passage = Passage { uuid           :: ID Passage
                        , passageTitle   :: Title
                        , passage        :: PassageBody
-                       , choices        :: [UUID] }
+                       , choices        :: [ID Passage] }
                        deriving (Eq, Ord, Show)
 
 data Story = Story { storyTitle :: Title
-                   , start      :: UUID
-                   , passages   :: Map UUID Passage }
+                   , start      :: ID Passage
+                   , passages   :: Map (ID Passage) Passage }
                    deriving (Eq, Ord, Show)
 
 type Title           = Text

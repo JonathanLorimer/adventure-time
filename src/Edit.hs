@@ -2,7 +2,6 @@ module Edit where
 
 import Types
 import qualified Data.Map as M
-import Data.UUID (UUID)
 
 data Action = AddPassage
             | RemovePassage
@@ -28,13 +27,13 @@ getPassages = M.elems . passages
 editPassage :: Passage -> PassageBody -> Passage
 editPassage p pbody = p { passage = pbody }
 
-addChoice' :: Passage -> UUID -> Passage
+addChoice' :: Passage -> ID Passage -> Passage
 addChoice' p choiceId = p { choices = choiceId : choices p }
 
 addChoice :: Passage -> Passage -> Passage
 addChoice p choice = addChoice' p $ uuid choice
 
-removeChoice' :: Passage -> UUID -> Passage
+removeChoice' :: Passage -> ID Passage -> Passage
 removeChoice' p r = p { choices = filter (/= r) (choices p) }
 
 removeChoice :: Passage -> Passage -> Passage

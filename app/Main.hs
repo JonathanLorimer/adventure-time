@@ -45,8 +45,8 @@ defaultStory :: IO Story
 defaultStory = do
   passageId <- nextRandom
   return Story { storyTitle = "Demo Story"
-               , start      = passageId
-               , passages   = M.fromList [(passageId, defaultPassage passageId)] }
+               , start      = ID passageId
+               , passages   = M.fromList [(ID passageId, defaultPassage passageId)] }
 
 defaultStory2 :: IO Story
 defaultStory2 = do
@@ -55,22 +55,23 @@ defaultStory2 = do
   passageId3 <- nextRandom
   passageId4 <- nextRandom
 
-  let p1 = (defaultPassage passageId ) { choices = [ passageId2
-                                                   , passageId3
-                                                   , passageId4 ] }
-  let p2 = (defaultPassage passageId2) { choices = [passageId3] }
-  let p3 = (defaultPassage passageId3) { choices = [passageId, passageId4] }
+  let p1 = (defaultPassage passageId ) { choices = [ ID passageId2
+                                                   , ID passageId3
+                                                   , ID passageId4 ] }
+  let p2 = (defaultPassage passageId2) { choices = [ ID passageId3 ] }
+  let p3 = (defaultPassage passageId3) { choices = [ ID passageId
+                                                   , ID passageId4 ] }
   let p4 = (defaultPassage passageId4) { choices = [] }
 
   return Story { storyTitle = "Demo Story 2"
-               , start      = passageId
-               , passages   = M.fromList [(passageId , p1)
-                                         ,(passageId2, p2)
-                                         ,(passageId3, p3)
-                                         ,(passageId4, p4)]}
+               , start      = ID passageId
+               , passages   = M.fromList [(ID passageId , p1)
+                                         ,(ID passageId2, p2)
+                                         ,(ID passageId3, p3)
+                                         ,(ID passageId4, p4)]}
 
 defaultPassage :: UUID -> Passage
-defaultPassage passageId = Passage { uuid           = passageId
+defaultPassage passageId = Passage { uuid           = ID passageId
                                    , passageTitle   = T.pack $ "Passage: " <> show passageId
                                    , passage        = defaultPassageBody
                                    , choices        = [] }
