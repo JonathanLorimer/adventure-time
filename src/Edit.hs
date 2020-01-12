@@ -11,7 +11,7 @@ import UIHelpers
 
 
 drawPickAction :: CursorPos -> [Widget Resource]
-drawPickAction c = txtWrap <$> prefixCursor c (showAction <$> [minBound ..])
+drawPickAction c = txtWrap <$> prefixCursor c (showAction <$> actionTable)
 
 drawEdit :: Action -> Story -> Widget Resource
 drawEdit = undefined

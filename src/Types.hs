@@ -10,6 +10,7 @@ module Types
 , showTitle
 , showPassageBody
 , showAction
+, actionTable
 , ID(..)
 , AppState(..)
 , Resource
@@ -84,14 +85,10 @@ instance Enum Action where
   fromEnum = fromJust . (`L.elemIndex` actionTable)
   toEnum   = (actionTable L.!!)
 
-instance Bounded Action where
-  minBound = AddPassage
-  maxBound = EditPassage Nothing
-
 instance Show Action where
-  showsPrec d  AddPassage      = showsPrec d ("Add Passage" :: String)
-  showsPrec d  RemovePassage   = showsPrec d ("Remove Passage" :: String)
-  showsPrec d  (EditPassage _) = showsPrec d ("Edit Passage" :: String)
+  showsPrec _  AddPassage      = showString "Add Passage"
+  showsPrec _  RemovePassage   = showString "Remove Passage"
+  showsPrec _  (EditPassage _) = showString "Edit Passage"
 
 actionTable :: [Action]
 actionTable = [AddPassage, RemovePassage, EditPassage Nothing]

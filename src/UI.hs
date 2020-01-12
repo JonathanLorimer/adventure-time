@@ -39,12 +39,13 @@ handleEvent s (VtyEvent (V.EvKey V.KUp []))    =
     else continue $ s { cursor = cursor s - 1 }
 handleEvent s (VtyEvent (V.EvKey V.KDown []))  =
   case mode s of
-   PickStory -> safeMove (M.size (stories s) - 1)
-   PickMode -> safeMove 1
-   Play     -> safeMove $ ((+ (-1)) . length . choices) (fromJust $ curPassage s)
+   PickStory -> safeMove (M.size (stories s))
+   PickMode -> safeMove 2
+   Play     -> safeMove $ (length . choices) (fromJust $ curPassage s)
+   Edit Nothing -> safeMove 3
    _ -> continue s
   where
-    safeMove i = if cursor s == i
+    safeMove i = if cursor s == (i - 1)
                   then continue s
                   else continue $ s { cursor = cursor s + 1 }
 
