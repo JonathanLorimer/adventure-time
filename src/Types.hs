@@ -9,15 +9,18 @@ module Types
 , showStory
 , showTitle
 , showPassageBody
+, showAction
 , ID(..)
 , AppState(..)
 , Resource
 , CursorPos
 , Mode(..)
-, Action
+, Action(..)
 ) where
 
+import qualified Data.List as L
 import Data.Map (Map)
+import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.UUID (UUID)
@@ -74,8 +77,24 @@ type CursorPos = Int
 
 data Action = AddPassage
             | RemovePassage
-            | EditPassage
-            deriving (Eq, Ord, Show, Enum)
+            | EditPassage (Maybe Passage)
+            deriving (Eq, Ord)
+
+instance Enum Action where
+  fromEnum = fromJust . (`L.elemIndex` actionTable)
+  toEnum   = (actionTable L.!!)
+
+instance Bounded Action where
+  minBound = AddPassage
+  maxBound = EditPassage Nothing
+
+instance Show Action where
+  showsPrec d  AddPassage      = showsPrec d ("Add Passage" :: String)
+  showsPrec d  RemovePassage   = showsPrec d ("Remove Passage" :: String)
+  showsPrec d  (EditPassage _) = showsPrec d ("Edit Passage" :: String)
+
+actionTable :: [Action]
+actionTable = [AddPassage, RemovePassage, EditPassage Nothing]
 
 showStory :: Story -> Text
 showStory = T.pack . show
@@ -86,3 +105,5 @@ showTitle = T.pack . show
 showPassageBody :: PassageBody -> Text
 showPassageBody = T.pack . show
 
+showAction :: Action -> Text
+showAction = T.pack . show

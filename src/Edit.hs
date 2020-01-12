@@ -2,15 +2,16 @@ module Edit where
 
 -- External Imports
 import Brick
+import qualified Data.Map as M
 
 -- Internal Imports
 import Types
-import qualified Data.Map as M
+import UIHelpers
 
 
 
-drawPickAction :: Widget Resource
-drawPickAction = undefined
+drawPickAction :: CursorPos -> [Widget Resource]
+drawPickAction c = txtWrap <$> prefixCursor c (showAction <$> [minBound ..])
 
 drawEdit :: Action -> Story -> Widget Resource
 drawEdit = undefined

@@ -25,7 +25,7 @@ drawUI :: AppState -> [Widget Resource]
 drawUI AppState { mode = PickStory, stories, cursor} = uiBase PickStory $ drawStories cursor (M.elems stories)
 drawUI AppState {mode = PickMode, cursor} = uiBase PickMode $ drawPickMode cursor
 drawUI a@AppState {mode = Play} = uiBase Play [drawPlay a]
-drawUI AppState {mode = (Edit Nothing)} = uiBase (Edit Nothing) [drawPickAction]
+drawUI AppState {mode = (Edit Nothing), cursor} = uiBase (Edit Nothing) (drawPickAction cursor)
 drawUI AppState {mode = (Edit (Just a)), story = (Just s)} = uiBase (Edit Nothing) [drawEdit a s]
 drawUI _ = error "something went wrong"
 
@@ -55,22 +55,34 @@ handleEvent s _                                = continue s
 transitionState :: AppState -> AppState
 transitionState s =
   case mode s of
+    -- Menu Transitions
     PickStory -> s { mode = PickMode
                    , story = Just $ M.elems (stories s) !! cursor s
-                   , cursor = 0 }
-    PickMode  -> s { mode = if cursor s == 0 then Edit Nothing else Play
+                   , cursor = 0
+                   }
+    PickMode  -> s { mode = if cursor s == 0
+                               then Edit Nothing
+                               else Play
                    , curPassage = story s >>=
-                      \st -> M.lookup (start st) (passages st) }
-    Play      -> case choices $ fromJust (curPassage s) of
-                     [] -> s { mode = PickStory
-                                  , story = Nothing
-                                  , curPassage = Nothing
-                                  , cursor = 0 }
-                     xs -> s { curPassage = M.lookup
-                                              (xs !! cursor s)
-                                              (fromJust $ passages <$> story s) }
-    _ -> s
-{-
-    Edit _    ->
--}
+                      \st -> M.lookup (start st) (passages st)
+                   }
+
+    -- Play Transitions
+    Play  -> case choices $ fromJust (curPassage s) of
+                [] -> s { mode       = PickStory
+                        , story      = Nothing
+                        , curPassage = Nothing
+                        , cursor     = 0
+                        }
+                xs -> s { curPassage =
+                       M.lookup (xs !! cursor s)
+                                (fromJust $ passages <$> story s)
+                        }
+
+    -- Edit Transitions
+    Edit Nothing                       -> s
+    Edit (Just AddPassage)             -> s
+    Edit (Just RemovePassage)          -> s
+    Edit (Just (EditPassage Nothing))  -> s
+    Edit (Just (EditPassage (Just p))) -> s
 
