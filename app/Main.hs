@@ -1,5 +1,6 @@
 module Main where
 
+import Edit
 import Types
 import UI (ui)
 
@@ -33,13 +34,17 @@ execApp a r k = let e = runExceptT $ runReaderT (runApp a) r
 handleAppError :: Exception e => e -> IO ()
 handleAppError = print
 
-runUI :: AppStack MockPersistence AppErrors AppState
+runUI :: AppStack MockPersistence AppErrors (AppState e)
 runUI = do
   ref <- ask
   initialState <- liftIO $ readIORef ref
   liftIO $ defaultMain ui (buildState initialState)
   where
     buildState s = AppState PickStory s Nothing Nothing 0
+                 $ mkAddPassageForm $ PassageForm { _formPassageTitle = ""
+                                                  , _formPassage = ""
+                                                  , _formChoices = []
+                                                  }
 
 defaultStory :: IO Story
 defaultStory = do

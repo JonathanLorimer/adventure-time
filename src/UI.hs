@@ -2,8 +2,12 @@ module UI where
 
 -- External Imports
 import Brick
+import Brick.Forms
 import qualified Data.Map as M
 import Data.Maybe
+import qualified Data.List as L
+import Data.UUID (UUID)
+import Data.UUID.V4 (nextRandom)
 import qualified Graphics.Vty as V
 
 -- Internal Imports
@@ -13,7 +17,7 @@ import Play (drawPlay)
 import Edit
 import UIHelpers
 
-ui :: App AppState e Resource
+ui :: App (AppState e) e Resource
 ui = App { appDraw         = drawUI
          , appChooseCursor = showFirstCursor
          , appHandleEvent  = handleEvent
@@ -21,18 +25,24 @@ ui = App { appDraw         = drawUI
          , appAttrMap      = const customAttrMap
          }
 
-drawUI :: AppState -> [Widget Resource]
+drawUI :: AppState e -> [Widget Resource]
 drawUI AppState { mode = PickStory, stories, cursor} = uiBase PickStory $ drawStories cursor (M.elems stories)
-drawUI AppState {mode = PickMode, cursor} = uiBase PickMode $ drawPickMode cursor
-drawUI a@AppState {mode = Play} = uiBase Play [drawPlay a]
-drawUI AppState {mode = (Edit Nothing), cursor} = uiBase (Edit Nothing) (drawPickAction cursor)
-drawUI AppState {mode = (Edit (Just a)), story = (Just s)} = uiBase (Edit Nothing) [drawEdit a s]
+drawUI AppState { mode = PickMode, cursor} = uiBase PickMode $ drawPickMode cursor
+drawUI a@AppState { mode = Play} = uiBase Play [drawPlay a]
+drawUI AppState { mode = (Edit Nothing), cursor} = uiBase (Edit Nothing) (drawPickAction cursor)
+drawUI AppState { mode = (Edit (Just a)), story = (Just s), passageForm } = uiBase (Edit Nothing) [drawEdit a s passageForm]
 drawUI _ = error "something went wrong"
 
 customAttrMap :: AttrMap
-customAttrMap = attrMap V.defAttr []
+customAttrMap =
+  attrMap V.defAttr [ (focusedFormInputAttr, V.black `on` V.yellow)
+                    ]
 
-handleEvent :: AppState -> BrickEvent Resource e -> EventM Resource (Next AppState)
+handleEvent :: AppState e -> BrickEvent Resource e -> EventM Resource (Next (AppState e))
+handleEvent s (VtyEvent (V.EvKey V.KEsc []))   = halt s
+handleEvent s@AppState {mode = Edit (Just AddPassage), story, passageForm } e = do
+                                      form <- handleFormEvent e passageForm
+                                      continue $ s { passageForm = form }
 handleEvent s (VtyEvent (V.EvKey V.KUp []))    =
   if cursor s == 0
     then continue s
@@ -50,10 +60,9 @@ handleEvent s (VtyEvent (V.EvKey V.KDown []))  =
                   else continue $ s { cursor = cursor s + 1 }
 
 handleEvent s (VtyEvent (V.EvKey V.KEnter [])) = continue $ transitionState s
-handleEvent s (VtyEvent (V.EvKey V.KEsc []))   = halt s
 handleEvent s _                                = continue s
 
-transitionState :: AppState -> AppState
+transitionState :: AppState e -> AppState e
 transitionState s =
   case mode s of
     -- Menu Transitions
@@ -81,7 +90,7 @@ transitionState s =
                         }
 
     -- Edit Transitions
-    Edit Nothing                       -> s
+    Edit Nothing                       -> s { mode = Edit $ Just $ actionTable L.!! cursor s }
     Edit (Just AddPassage)             -> s
     Edit (Just RemovePassage)          -> s
     Edit (Just (EditPassage Nothing))  -> s

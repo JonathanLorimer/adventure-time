@@ -7,7 +7,7 @@ import Types
 import UIHelpers
 
 
-drawPlay :: AppState -> Widget Resource
+drawPlay :: AppState e -> Widget Resource
 drawPlay AppState {story = Nothing} = error "should not be able to get here"
 drawPlay AppState { story = (Just s), curPassage, cursor} =
   let psg = fromMaybe (fromJust $ M.lookup (start s) (passages s)) curPassage

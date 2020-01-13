@@ -2,6 +2,7 @@ module Edit where
 
 -- External Imports
 import Brick
+import Brick.Forms
 import qualified Data.Map as M
 
 -- Internal Imports
@@ -13,8 +14,19 @@ import UIHelpers
 drawPickAction :: CursorPos -> [Widget Resource]
 drawPickAction c = txtWrap <$> prefixCursor c (showAction <$> actionTable)
 
-drawEdit :: Action -> Story -> Widget Resource
-drawEdit = undefined
+drawEdit :: Action -> Story -> Form PassageForm e Resource -> Widget Resource
+drawEdit AddPassage Story { passages } form = renderForm form
+drawEdit RemovePassage s _ = txtWrap "Remove Passage"
+drawEdit (EditPassage _) s _ = txtWrap "Edit Passage"
+
+mkAddPassageForm :: PassageForm -> Form PassageForm e Resource
+mkAddPassageForm = newForm
+                 [ (str "Title: " <+>)   @@= editTextField formPassageTitle TitleField (Just 1)
+                 , (str "Passage: " <+>) @@= editTextField formPassage PassageField Nothing
+                 ]
+
+                    -- ++ ((checkboxField formChoices) . passageTitle <$> p))
+
 
 addPassage :: Story
            -> Passage

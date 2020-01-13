@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Types
@@ -13,12 +14,17 @@ module Types
 , actionTable
 , ID(..)
 , AppState(..)
-, Resource
+, Resource(..)
 , CursorPos
 , Mode(..)
 , Action(..)
+, PassageForm(..)
+, formChoices
+, formPassage
+, formPassageTitle
 ) where
 
+import Brick.Forms
 import qualified Data.List as L
 import Data.Map (Map)
 import Data.Maybe
@@ -29,22 +35,9 @@ import Data.IORef
 import Control.Monad.Reader
 import Control.Monad.Except
 import Control.Exception
+import Lens.Micro.TH (makeLenses)
 
-newtype ID a = ID UUID deriving (Eq, Ord, Show)
-
-data Passage = Passage { uuid           :: ID Passage
-                       , passageTitle   :: Title
-                       , passage        :: PassageBody
-                       , choices        :: [ID Passage] }
-                       deriving (Eq, Ord, Show)
-
-data Story = Story { storyTitle :: Title
-                   , start      :: ID Passage
-                   , passages   :: Map (ID Passage) Passage }
-                   deriving (Eq, Ord, Show)
-
-type Title           = Text
-type PassageBody     = Text
+-- Monad Stack
 type MockPersistence = IORef (Map Title Story)
 
 data AppErrors       = BasicError
@@ -60,22 +53,46 @@ newtype AppStack r e a = AppStack { runApp :: ReaderT r (ExceptT e IO) a }
            , MonadReader r
            , MonadIO )
 
+-- Business Logic
+newtype ID a = ID UUID deriving (Eq, Ord, Show)
+
+data Passage = Passage { uuid           :: ID Passage
+                       , passageTitle   :: Title
+                       , passage        :: PassageBody
+                       , choices        :: [ID Passage] }
+                       deriving (Eq, Ord, Show)
+
+data Story = Story { storyTitle :: Title
+                   , start      :: ID Passage
+                   , passages   :: Map (ID Passage) Passage }
+                   deriving (Eq, Ord, Show)
+
+type Title           = Text
+type PassageBody     = Text
+
+
+-- UI State
 data Mode = PickStory
           | PickMode
           | Play
           | Edit (Maybe Action)
           deriving (Eq, Ord, Show)
 
-data AppState = AppState { mode       :: Mode
-                         , stories    :: Map Title Story
-                         , story      :: Maybe Story
-                         , curPassage :: Maybe Passage
-                         , cursor     :: CursorPos }
+data AppState e = AppState { mode        :: Mode
+                         , stories     :: Map Title Story
+                         , story       :: Maybe Story
+                         , curPassage  :: Maybe Passage
+                         , cursor      :: CursorPos
+                         , passageForm :: Form PassageForm e Resource }
 
-type Resource = ()
+data Resource = TitleField
+              | PassageField
+              deriving (Eq, Ord, Show)
+
 type CursorPos = Int
 
 
+-- Edit State
 data Action = AddPassage
             | RemovePassage
             | EditPassage (Maybe Passage)
@@ -93,6 +110,15 @@ instance Show Action where
 actionTable :: [Action]
 actionTable = [AddPassage, RemovePassage, EditPassage Nothing]
 
+-- Form State
+data PassageForm = PassageForm { _formPassageTitle :: Text
+                               , _formPassage      :: Text
+                               , _formChoices      :: [(ID Passage, Title, Bool)]
+                               } deriving (Eq, Ord, Show)
+
+makeLenses ''PassageForm
+
+-- Type Coercion
 showStory :: Story -> Text
 showStory = T.pack . show
 
