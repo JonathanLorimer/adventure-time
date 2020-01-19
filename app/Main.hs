@@ -1,18 +1,17 @@
 module Main where
 
-import Edit
-import Types
-import UI (ui)
+import           Types
+import           UI                   (ui)
 
-import Data.IORef
-import qualified Data.Text as T
-import Data.UUID (UUID)
-import Data.UUID.V4 (nextRandom)
-import qualified Data.Map as M
-import Control.Monad.Reader
-import Control.Monad.Except
-import Control.Exception
-import Brick.Main (defaultMain)
+import           Brick.Main           (defaultMain)
+import           Control.Exception
+import           Control.Monad.Except
+import           Control.Monad.Reader
+import           Data.IORef
+import qualified Data.Map             as M
+import qualified Data.Text            as T
+import           Data.UUID            (UUID)
+import           Data.UUID.V4         (nextRandom)
 
 main :: IO ()
 main = do
@@ -40,11 +39,7 @@ runUI = do
   initialState <- liftIO $ readIORef ref
   liftIO $ defaultMain ui (buildState initialState)
   where
-    buildState s = AppState PickStory s Nothing Nothing 0
-                 $ mkAddPassageForm $ PassageForm { _formPassageTitle = ""
-                                                  , _formPassage = ""
-                                                  , _formChoices = []
-                                                  }
+    buildState s = AppState PickStory s Nothing Nothing 0 Nothing
 
 defaultStory :: IO Story
 defaultStory = do

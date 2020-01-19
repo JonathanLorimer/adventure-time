@@ -1,10 +1,10 @@
-module Play where
+module Mode.Play where
 
-import Brick
-import qualified Data.Map as M
-import Data.Maybe
-import Types
-import UIHelpers
+import           Brick
+import qualified Data.Map   as M
+import           Data.Maybe
+import           Types
+import           UI.Helpers
 
 
 drawPlay :: AppState e -> Widget Resource

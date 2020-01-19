@@ -2,7 +2,7 @@ module Menu where
 
 import Brick
 import Types
-import UIHelpers
+import UI.Helpers
 
 drawStories :: CursorPos -> [Story] -> [Widget Resource]
 drawStories _ [] = [txtWrap . ("➤ " <>) $ "create story"]

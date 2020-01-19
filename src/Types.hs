@@ -1,5 +1,5 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TemplateHaskell            #-}
 
 module Types
 ( AppStack(..) , AppErrors(..) , MockPersistence
@@ -24,19 +24,18 @@ module Types
 , formPassageTitle
 ) where
 
-import Brick.Forms
-import qualified Data.List as L
-import Data.Map (Map)
-import Data.Maybe
-import Data.Text (Text)
-import qualified Data.Text as T
-import Data.UUID (UUID)
-import Data.IORef
-import Control.Monad.Reader
-import Control.Monad.Except
-import Control.Exception
-import Lens.Micro.TH (makeLenses)
-
+import           Brick.Forms
+import           Control.Exception
+import           Control.Monad.Except
+import           Control.Monad.Reader
+import           Data.IORef
+import qualified Data.List            as L
+import           Data.Map             (Map)
+import           Data.Maybe
+import           Data.Text            (Text)
+import qualified Data.Text            as T
+import           Data.UUID            (UUID)
+import           Lens.Micro.TH        (makeLenses)
 -- Monad Stack
 type MockPersistence = IORef (Map Title Story)
 
@@ -56,10 +55,10 @@ newtype AppStack r e a = AppStack { runApp :: ReaderT r (ExceptT e IO) a }
 -- Business Logic
 newtype ID a = ID UUID deriving (Eq, Ord, Show)
 
-data Passage = Passage { uuid           :: ID Passage
-                       , passageTitle   :: Title
-                       , passage        :: PassageBody
-                       , choices        :: [ID Passage] }
+data Passage = Passage { uuid         :: ID Passage
+                       , passageTitle :: Title
+                       , passage      :: PassageBody
+                       , choices      :: [ID Passage] }
                        deriving (Eq, Ord, Show)
 
 data Story = Story { storyTitle :: Title
@@ -78,15 +77,16 @@ data Mode = PickStory
           | Edit (Maybe Action)
           deriving (Eq, Ord, Show)
 
-data AppState e = AppState { mode        :: Mode
+data AppState e = AppState { mode      :: Mode
                          , stories     :: Map Title Story
                          , story       :: Maybe Story
                          , curPassage  :: Maybe Passage
                          , cursor      :: CursorPos
-                         , passageForm :: Form PassageForm e Resource }
+                         , passageForm :: Maybe (Form PassageForm e Resource) }
 
 data Resource = TitleField
               | PassageField
+              | ChoicesField String
               deriving (Eq, Ord, Show)
 
 type CursorPos = Int
@@ -113,7 +113,7 @@ actionTable = [AddPassage, RemovePassage, EditPassage Nothing]
 -- Form State
 data PassageForm = PassageForm { _formPassageTitle :: Text
                                , _formPassage      :: Text
-                               , _formChoices      :: [(ID Passage, Title, Bool)]
+                               , _formChoices      :: Map (ID Passage) Bool
                                } deriving (Eq, Ord, Show)
 
 makeLenses ''PassageForm

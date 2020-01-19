@@ -1,14 +1,14 @@
-module UIHelpers where
+module UI.Helpers where
 
-import qualified Brick.Widgets.Center as C
-import qualified Brick.Widgets.Border as B
+import qualified Brick.Widgets.Border       as B
 import qualified Brick.Widgets.Border.Style as BS
-import qualified Data.Text as T
-import qualified Data.List as L
-import Data.Text (Text)
+import qualified Brick.Widgets.Center       as C
+import qualified Data.List                  as L
+import           Data.Text                  (Text)
+import qualified Data.Text                  as T
 
-import Brick
-import Types
+import           Brick
+import           Types
 
 uiBase :: Mode -> [Widget Resource] -> [Widget Resource]
 uiBase m w = [ genericBorder
