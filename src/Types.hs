@@ -87,7 +87,7 @@ data AppState e = AppState { mode      :: Mode
 data Resource = TitleField
               | PassageField
               | ChoicesField String
-              deriving (Eq, Ord, Show)
+                deriving (Eq, Ord, Show)
 
 type CursorPos = Int
 

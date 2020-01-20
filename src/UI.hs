@@ -2,6 +2,7 @@ module UI where
 
 -- External Imports
 import           Brick
+import           Brick.Focus
 import           Brick.Forms
 import qualified Data.List    as L
 import qualified Data.Map     as M
@@ -45,11 +46,20 @@ customAttrMap =
                     ]
 
 handleEvent :: AppState e -> BrickEvent Resource e -> EventM Resource (Next (AppState e))
+
+-- Escape Events
 handleEvent s (VtyEvent (V.EvKey V.KEsc []))   = halt s
+
+-- Form Events
 handleEvent s@AppState { mode = Edit (Just AddPassage)
-                       , passageForm = Just pf } e = do
-                                      form <- handleFormEvent e pf
-                                      continue $ s { passageForm = Just form }
+                       , passageForm = Just pf } e =
+                          case focusGetCurrent $ formFocus pf of
+                           Just (ChoicesField "") -> undefined
+                           _ -> do
+                                form <- handleFormEvent e pf
+                                continue $ s { passageForm = Just form }
+
+-- Cursor Events
 handleEvent s (VtyEvent (V.EvKey V.KUp []))    =
   if cursor s == 0
     then continue s
@@ -66,6 +76,7 @@ handleEvent s (VtyEvent (V.EvKey V.KDown []))  =
                   then continue s
                   else continue $ s { cursor = cursor s + 1 }
 
+-- Transition Event
 handleEvent s (VtyEvent (V.EvKey V.KEnter [])) = continue $ transitionState s
 handleEvent s _                                = continue s
 

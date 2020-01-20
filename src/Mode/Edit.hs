@@ -5,33 +5,36 @@ module Mode.Edit where
 -- External Imports
 import           Brick
 import           Brick.Forms
-import           Data.Map       (Map)
-import qualified Data.Map       as M
+import qualified Brick.Widgets.Center as C
+import           Data.Map             (Map)
+import qualified Data.Map             as M
 import           Data.Maybe
 import           Lens.Micro
-import           Lens.Micro.GHC ()
+import           Lens.Micro.GHC       ()
 
 -- Internal Imports
 import           Types
 import           UI.Helpers
 
 
-
 drawPickAction :: CursorPos -> [Widget Resource]
 drawPickAction c = txtWrap <$> prefixCursor c (showAction <$> actionTable)
 
 drawEdit :: Action -> Story -> Form PassageForm e Resource -> Widget Resource
-drawEdit AddPassage Story { passages } form = renderForm
-  $ form
+drawEdit AddPassage Story { passages } form = renderForm form
+                                           <=> C.center (txt "Submit")
 drawEdit RemovePassage s _                  = txtWrap "Remove Passage"
 drawEdit (EditPassage _) s _                = txtWrap "Edit Passage"
 
 mkAddPassageForm :: Map (ID Passage) Passage ->  Form PassageForm e Resource
-mkAddPassageForm ps = newForm
-  ([ (str "Title: " <+>)   @@= editTextField formPassageTitle TitleField (Just 1)
-  , (str "Passage: " <+>) @@= editTextField formPassage PassageField Nothing
-  ]
-    ++ (mkCheckboxPassage ps <$> M.keys fc)) pf
+mkAddPassageForm ps = setFormConcat vBox $ newForm
+   ( groupBorder "Passage Content"
+      [ 1 |> (str "Title:   " <+>)   @@= editTextField formPassageTitle TitleField (Just 1)
+      , 2 |> (str "Passage: " <+>) @@= editTextField formPassage PassageField Nothing
+      ]
+  ++ groupBorder "Add Passage Choices"
+      ((1 |>) . (mkCheckboxPassage ps) <$> M.keys fc)
+   ) pf
     where
       fc = fmap (const False) ps
       pf = PassageForm { _formPassageTitle = ""
