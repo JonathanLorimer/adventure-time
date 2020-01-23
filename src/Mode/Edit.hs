@@ -34,12 +34,14 @@ mkAddPassageForm ps = setFormConcat vBox $ newForm
       ]
   ++ groupBorder "Add Passage Choices"
       ((1 |>) . (mkCheckboxPassage ps) <$> M.keys fc)
+  ++ [checkboxCustomField ' ' ' ' ' ' formSubmit SubmitField "Submit"]
    ) pf
     where
       fc = fmap (const False) ps
       pf = PassageForm { _formPassageTitle = ""
                        , _formPassage = ""
                        , _formChoices = fc
+                       , _formSubmit = False
                        }
 
 mkCheckboxPassage :: Map (ID Passage) Passage
@@ -66,7 +68,6 @@ mkCheckboxPassage m pid = checkboxField
 
 -- editPassage :: Passage -> PassageBody -> Passage
 -- editPassage p pbody = p { passage = pbody }
-
 -- addChoice' :: Passage -> ID Passage -> Passage
 -- addChoice' p choiceId = p { choices = choiceId : choices p }
 

@@ -22,6 +22,7 @@ module Types
 , formChoices
 , formPassage
 , formPassageTitle
+, formSubmit
 ) where
 
 import           Brick.Forms
@@ -87,6 +88,7 @@ data AppState e = AppState { mode      :: Mode
 data Resource = TitleField
               | PassageField
               | ChoicesField String
+              | SubmitField
                 deriving (Eq, Ord, Show)
 
 type CursorPos = Int
@@ -114,6 +116,7 @@ actionTable = [AddPassage, RemovePassage, EditPassage Nothing]
 data PassageForm = PassageForm { _formPassageTitle :: Text
                                , _formPassage      :: Text
                                , _formChoices      :: Map (ID Passage) Bool
+                               , _formSubmit       :: Bool
                                } deriving (Eq, Ord, Show)
 
 makeLenses ''PassageForm

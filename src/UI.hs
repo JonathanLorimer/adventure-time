@@ -2,7 +2,6 @@ module UI where
 
 -- External Imports
 import           Brick
-import           Brick.Focus
 import           Brick.Forms
 import qualified Data.List    as L
 import qualified Data.Map     as M
@@ -10,6 +9,7 @@ import           Data.Maybe
 -- import           Data.UUID    (UUID)
 -- import           Data.UUID.V4 (nextRandom)
 import qualified Graphics.Vty as V
+import           Lens.Micro   ((^.))
 
 -- Internal Imports
 import           Menu
@@ -52,12 +52,18 @@ handleEvent s (VtyEvent (V.EvKey V.KEsc []))   = halt s
 
 -- Form Events
 handleEvent s@AppState { mode = Edit (Just AddPassage)
-                       , passageForm = Just pf } e =
-                          case focusGetCurrent $ formFocus pf of
-                           Just (ChoicesField "") -> undefined
-                           _ -> do
+                       , passageForm = Just pf } e = do
                                 form <- handleFormEvent e pf
-                                continue $ s { passageForm = Just form }
+                                if formState form ^. formSubmit
+                                   then suspendAndResume $ do
+                                     print "submitted form"
+                                     pure s { passageForm = Nothing
+                                            , story       = Nothing
+                                            , curPassage  = Nothing
+                                            , cursor      = 0
+
+                                            }
+                                   else continue $ s { passageForm = Just form }
 
 -- Cursor Events
 handleEvent s (VtyEvent (V.EvKey V.KUp []))    =
