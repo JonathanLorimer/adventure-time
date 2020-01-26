@@ -2,12 +2,13 @@ module UI where
 
 -- External Imports
 import           Brick
+import           Brick.Focus  (focusGetCurrent)
 import           Brick.Forms
 import qualified Data.List    as L
 import qualified Data.Map     as M
 import           Data.Maybe
 -- import           Data.UUID    (UUID)
--- import           Data.UUID.V4 (nextRandom)
+import           Data.UUID.V4 (nextRandom)
 import qualified Graphics.Vty as V
 import           Lens.Micro   ((^.))
 
@@ -52,18 +53,42 @@ handleEvent s (VtyEvent (V.EvKey V.KEsc []))   = halt s
 
 -- Form Events
 handleEvent s@AppState { mode = Edit (Just AddPassage)
-                       , passageForm = Just pf } e = do
-                                form <- handleFormEvent e pf
-                                if formState form ^. formSubmit
-                                   then suspendAndResume $ do
-                                     print "submitted form"
-                                     pure s { passageForm = Nothing
-                                            , story       = Nothing
-                                            , curPassage  = Nothing
-                                            , cursor      = 0
+                       , passageForm = Just pasform } e = do
+      form <- handleFormEvent e pasform
+      case e of
+        (VtyEvent (V.EvKey V.KEnter [])) ->
+          if (fromJust . focusGetCurrent . formFocus $ form) == SubmitField
+            then ioAction (persistence s) s (formState form)
+            else continue s
+        _                                ->
+          if formState form ^. formSubmit
+            then ioAction (persistence s) s (formState form)
+            else continue $ s { passageForm = Just form }
 
+  where
+    ioAction :: IORefPersistence -> AppState e -> PassageForm -> EventM Resource (Next (AppState e))
+    ioAction Persistence { get, put} as pf = suspendAndResume $ do
+                      uid <- nextRandom
+                      let pid = ID uid
+                      let passage = Passage { uuid = pid
+                                            , passageTitle = pf ^. formPassageTitle
+                                            , passage = pf ^. formPassage
+                                            , choices = fmap fst
+                                                      . filter snd
+                                                      . M.toList
+                                                      $ pf ^. formChoices
                                             }
-                                   else continue $ s { passageForm = Just form }
+                      let oldStory = fromJust $ story as
+                      let newStory = oldStory { passages = M.insert pid passage (passages oldStory) }
+                      stories <- get
+                      let newState =  M.adjust (const newStory) (storyTitle newStory) stories
+                      put newState
+                      pure s { mode        = PickStory
+                             , passageForm = Nothing
+                             , story       = Nothing
+                             , curPassage  = Nothing
+                             , cursor      = 0
+                             }
 
 -- Cursor Events
 handleEvent s (VtyEvent (V.EvKey V.KUp []))    =

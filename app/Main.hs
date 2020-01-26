@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeApplications #-}
 module Main where
 
 import           Types
@@ -17,9 +18,12 @@ main :: IO ()
 main = do
   dStory  <- defaultStory
   dStory2 <- defaultStory2
-  initialState <- newIORef $ M.fromList [ ("Demo Story", dStory)
-                                        , ("Demo Story 2", dStory2) ]
-  execApp runUI initialState (\_ -> print ("done" :: String))
+  ref <- newIORef $ M.fromList [ ("Demo Story" :: Title , dStory)
+                               , ("Demo Story 2" :: Title, dStory2) ]
+  let persist = Persistence { get = readIORef ref
+                            , put = writeIORef ref
+                            } :: IORefPersistence
+  execApp runUI persist (\_ -> print ("done" :: String))
   return ()
 
 execApp :: Exception e
@@ -33,11 +37,11 @@ execApp a r k = let e = runExceptT $ runReaderT (runApp a) r
 handleAppError :: Exception e => e -> IO ()
 handleAppError = print
 
-runUI :: AppStack MockPersistence AppErrors (AppState e)
+runUI :: AppStack IORefPersistence  AppErrors (AppState e)
 runUI = do
-  ref <- ask
-  initialState <- liftIO $ readIORef ref
-  liftIO $ defaultMain ui (buildState initialState)
+  persistence <- ask
+  initialState <- liftIO $ get persistence
+  liftIO $ defaultMain ui (buildState initialState persistence)
   where
     buildState s = AppState PickStory s Nothing Nothing 0 Nothing
 

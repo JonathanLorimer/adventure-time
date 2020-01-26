@@ -2,7 +2,9 @@
 {-# LANGUAGE TemplateHaskell            #-}
 
 module Types
-( AppStack(..) , AppErrors(..) , MockPersistence
+( AppStack(..)
+, AppErrors(..)
+, MockPersistence
 , Title
 , PassageBody
 , Story(..)
@@ -23,6 +25,8 @@ module Types
 , formPassage
 , formPassageTitle
 , formSubmit
+, Persistence(..)
+, IORefPersistence
 ) where
 
 import           Brick.Forms
@@ -38,7 +42,14 @@ import qualified Data.Text            as T
 import           Data.UUID            (UUID)
 import           Lens.Micro.TH        (makeLenses)
 -- Monad Stack
+
 type MockPersistence = IORef (Map Title Story)
+
+data Persistence a = Persistence { get :: IO a
+                                 , put :: a -> IO ()
+                                 }
+
+type IORefPersistence = Persistence (Map Title Story)
 
 data AppErrors       = BasicError
   deriving (Show)
@@ -71,6 +82,8 @@ type Title           = Text
 type PassageBody     = Text
 
 
+
+
 -- UI State
 data Mode = PickStory
           | PickMode
@@ -78,12 +91,13 @@ data Mode = PickStory
           | Edit (Maybe Action)
           deriving (Eq, Ord, Show)
 
-data AppState e = AppState { mode      :: Mode
-                         , stories     :: Map Title Story
-                         , story       :: Maybe Story
-                         , curPassage  :: Maybe Passage
-                         , cursor      :: CursorPos
-                         , passageForm :: Maybe (Form PassageForm e Resource) }
+data AppState e = AppState { mode        :: Mode
+                           , stories     :: Map Title Story
+                           , story       :: Maybe Story
+                           , curPassage  :: Maybe Passage
+                           , cursor      :: CursorPos
+                           , passageForm :: Maybe (Form PassageForm e Resource)
+                           , persistence :: IORefPersistence}
 
 data Resource = TitleField
               | PassageField
