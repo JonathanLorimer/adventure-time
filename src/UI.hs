@@ -86,6 +86,7 @@ handleEvent s@AppState { mode = Edit (Just AddPassage)
                       pure s { mode        = PickStory
                              , passageForm = Nothing
                              , story       = Nothing
+                             , stories     = newState
                              , curPassage  = Nothing
                              , cursor      = 0
                              }

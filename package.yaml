@@ -27,6 +27,7 @@ dependencies:
 - microlens-ghc
 - microlens-th
 - mtl
+- pretty-simple
 - text
 - uuid
 - vty

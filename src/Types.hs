@@ -15,8 +15,7 @@ module Types
 , showAction
 , actionTable
 , ID(..)
-, AppState(..)
-, Resource(..)
+, AppState(..) , Resource(..)
 , CursorPos
 , Mode(..)
 , Action(..)
@@ -39,8 +38,10 @@ import           Data.Map             (Map)
 import           Data.Maybe
 import           Data.Text            (Text)
 import qualified Data.Text            as T
+import           Data.Text.Lazy       (toStrict)
 import           Data.UUID            (UUID)
 import           Lens.Micro.TH        (makeLenses)
+import           Text.Pretty.Simple
 -- Monad Stack
 
 type MockPersistence = IORef (Map Title Story)
@@ -97,7 +98,16 @@ data AppState e = AppState { mode        :: Mode
                            , curPassage  :: Maybe Passage
                            , cursor      :: CursorPos
                            , passageForm :: Maybe (Form PassageForm e Resource)
-                           , persistence :: IORefPersistence}
+                           , persistence :: IORefPersistence }
+
+instance Show (AppState e) where
+  showsPrec _ AppState { mode, stories, story, curPassage, cursor } = showString
+    $ "mode: " <> show mode <> "\n"
+    <> "stories: " <> (T.unpack . toStrict $ pShow stories) <> "\n"
+    <> "story: " <> (show $ storyTitle <$> story) <> "\n"
+    <> "curPassage: " <> (show $ passageTitle <$> curPassage) <> "\n"
+    <> "cursor: " <> show cursor
+
 
 data Resource = TitleField
               | PassageField

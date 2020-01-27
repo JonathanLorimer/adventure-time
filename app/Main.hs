@@ -23,7 +23,7 @@ main = do
   let persist = Persistence { get = readIORef ref
                             , put = writeIORef ref
                             } :: IORefPersistence
-  execApp runUI persist (\_ -> print ("done" :: String))
+  execApp runUI persist (\a -> print a)
   return ()
 
 execApp :: Exception e
@@ -50,7 +50,7 @@ defaultStory = do
   passageId <- nextRandom
   return Story { storyTitle = "Demo Story"
                , start      = ID passageId
-               , passages   = M.fromList [(ID passageId, defaultPassage passageId)] }
+               , passages   = M.fromList [(ID passageId, defaultPassage "Passage 1" passageId)] }
 
 defaultStory2 :: IO Story
 defaultStory2 = do
@@ -59,13 +59,13 @@ defaultStory2 = do
   passageId3 <- nextRandom
   passageId4 <- nextRandom
 
-  let p1 = (defaultPassage passageId ) { choices = [ ID passageId2
+  let p1 = (defaultPassage "Passage 1" passageId ) { choices = [ ID passageId2
                                                    , ID passageId3
                                                    , ID passageId4 ] }
-  let p2 = (defaultPassage passageId2) { choices = [ ID passageId3 ] }
-  let p3 = (defaultPassage passageId3) { choices = [ ID passageId
+  let p2 = (defaultPassage "Passage 2" passageId2) { choices = [ ID passageId3 ] }
+  let p3 = (defaultPassage "Passage 3" passageId3) { choices = [ ID passageId
                                                    , ID passageId4 ] }
-  let p4 = (defaultPassage passageId4) { choices = [] }
+  let p4 = (defaultPassage "Passage 4" passageId4) { choices = [] }
 
   return Story { storyTitle = "Demo Story 2"
                , start      = ID passageId
@@ -74,11 +74,11 @@ defaultStory2 = do
                                          ,(ID passageId3, p3)
                                          ,(ID passageId4, p4)]}
 
-defaultPassage :: UUID -> Passage
-defaultPassage passageId = Passage { uuid           = ID passageId
-                                   , passageTitle   = T.pack $ "Passage: " <> show passageId
-                                   , passage        = defaultPassageBody
-                                   , choices        = [] }
+defaultPassage :: T.Text -> UUID -> Passage
+defaultPassage title passageId = Passage { uuid           = ID passageId
+                                         , passageTitle   = title
+                                         , passage        = defaultPassageBody
+                                         , choices        = [] }
 
 defaultPassageBody :: PassageBody
 defaultPassageBody = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
