@@ -21,9 +21,9 @@ main = do
   ref <- newIORef $ M.fromList [ ("Demo Story" :: Title , dStory)
                                , ("Demo Story 2" :: Title, dStory2) ]
   let persist = Persistence { get = readIORef ref
-                            , put = writeIORef ref
-                            } :: IORefPersistence
-  execApp runUI persist (\a -> print a)
+                            , put = modifyIORef' ref
+                            }
+  execApp runUI persist print
   return ()
 
 execApp :: Exception e
@@ -37,7 +37,7 @@ execApp a r k = let e = runExceptT $ runReaderT (runApp a) r
 handleAppError :: Exception e => e -> IO ()
 handleAppError = print
 
-runUI :: AppStack IORefPersistence  AppErrors (AppState e)
+runUI :: AppStack (Persistence (M.Map Title Story))  AppErrors (AppState e)
 runUI = do
   persistence <- ask
   initialState <- liftIO $ get persistence

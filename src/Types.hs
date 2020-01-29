@@ -25,7 +25,7 @@ module Types
 , formPassageTitle
 , formSubmit
 , Persistence(..)
-, IORefPersistence
+, StoryPersistence
 ) where
 
 import           Brick.Forms
@@ -47,10 +47,10 @@ import           Text.Pretty.Simple
 type MockPersistence = IORef (Map Title Story)
 
 data Persistence a = Persistence { get :: IO a
-                                 , put :: a -> IO ()
+                                 , put :: (a -> a) -> IO ()
                                  }
 
-type IORefPersistence = Persistence (Map Title Story)
+type StoryPersistence = Persistence (Map Title Story)
 
 data AppErrors       = BasicError
   deriving (Show)
@@ -98,7 +98,7 @@ data AppState e = AppState { mode        :: Mode
                            , curPassage  :: Maybe Passage
                            , cursor      :: CursorPos
                            , passageForm :: Maybe (Form PassageForm e Resource)
-                           , persistence :: IORefPersistence }
+                           , persistence :: StoryPersistence }
 
 instance Show (AppState e) where
   showsPrec _ AppState { mode, stories, story, curPassage, cursor } = showString

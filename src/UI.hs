@@ -23,8 +23,7 @@ ui :: App (AppState e) e Resource
 ui = App { appDraw         = drawUI
          , appChooseCursor = showFirstCursor
          , appHandleEvent  = handleEvent
-         , appStartEvent   = return
-         , appAttrMap      = const customAttrMap
+         , appStartEvent   = return , appAttrMap      = const customAttrMap
          }
 
 drawUI :: AppState e -> [Widget Resource]
@@ -66,7 +65,7 @@ handleEvent s@AppState { mode = Edit (Just AddPassage)
             else continue $ s { passageForm = Just form }
 
   where
-    ioAction :: IORefPersistence -> AppState e -> PassageForm -> EventM Resource (Next (AppState e))
+    ioAction :: StoryPersistence -> AppState e -> PassageForm -> EventM Resource (Next (AppState e))
     ioAction Persistence { get, put} as pf = suspendAndResume $ do
                       uid <- nextRandom
                       let pid = ID uid
@@ -80,13 +79,13 @@ handleEvent s@AppState { mode = Edit (Just AddPassage)
                                             }
                       let oldStory = fromJust $ story as
                       let newStory = oldStory { passages = M.insert pid passage (passages oldStory) }
-                      stories <- get
-                      let newState =  M.adjust (const newStory) (storyTitle newStory) stories
+                      let newState =  M.adjust (const newStory) (storyTitle newStory)
                       put newState
+                      newState' <- get
                       pure s { mode        = PickStory
                              , passageForm = Nothing
                              , story       = Nothing
-                             , stories     = newState
+                             , stories     = newState'
                              , curPassage  = Nothing
                              , cursor      = 0
                              }
